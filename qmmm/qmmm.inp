@@ -1,0 +1,179 @@
+&GLOBAL
+  PROJECT input
+  RUN_TYPE MD
+  PRINT_LEVEL LOW 
+&END GLOBAL
+
+&FORCE_EVAL
+  METHOD QMMM 
+
+  &DFT
+    CHARGE -1
+    MULTIPLICITY 1
+    BASIS_SET_FILE_NAME  BASIS_MOLOPT
+    POTENTIAL_FILE_NAME  POTENTIAL
+
+    &MGRID
+      CUTOFF 300
+      COMMENSURATE
+    &END MGRID
+    &SCF                        ! Parameters controlling the convergence of the scf. This section should not be changed. 
+      SCF_GUESS RESTART 
+      EPS_SCF 1.0E-6
+      MAX_SCF 300
+      &OT  T
+        MINIMIZER  DIIS
+        STEPSIZE     1.4999999999999999E-01
+        PRECONDITIONER FULL_SINGLE_INVERSE 
+      &END OT
+    &END SCF
+    &XC                        ! Parameters needed to compute the electronic exchange potential 
+      &XC_FUNCTIONAL PBE
+      &END XC_FUNCTIONAL
+    &END XC
+    &QS
+     METHOD GPW
+     EPS_DEFAULT 1.0E-12
+     EPS_FILTER_MATRIX 0
+     EPS_PGF_ORB 1.0E-20
+    &END QS
+  &END DFT
+
+  &QMMM  			! This defines the QS cell in the QMMM calc
+    &CELL
+      ABC 20 20 20
+      PERIODIC XYZ
+    &END CELL
+    ECOUPL GAUSS
+    USE_GEEP_LIB 12
+    &PERIODIC 
+      &MULTIPOLE ON
+      &END
+    &END PERIODIC
+    &QM_KIND O
+      MM_INDEX 970 979 2306 2307
+    &END QM_KIND
+    &QM_KIND C
+      MM_INDEX 961 963 964 965 966 967 969 972 974 978 2302 2305
+    &END QM_KIND
+    &QM_KIND N
+      MM_INDEX 962 980
+    &END QM_KIND
+    &QM_KIND H
+      MM_INDEX 968 971 973 975 976 977 2303 2304
+    &END QM_KIND
+    &LINK
+    QM_KIND H
+    MM_INDEX 951
+    QM_INDEX 961
+    LINK_TYPE IMOMM
+    QMMM_SCALE_FACTOR 0
+    &END LINK
+    &LINK
+    QM_KIND H
+    MM_INDEX 981
+    QM_INDEX 980
+    LINK_TYPE IMOMM
+    QMMM_SCALE_FACTOR 0
+    &END LINK
+   &LINK
+    QM_KIND H
+    MM_INDEX 2300
+    QM_INDEX 2302
+    LINK_TYPE IMOMM
+    QMMM_SCALE_FACTOR 0
+    &END LINK
+  &END QMMM
+
+  &MM
+    &FORCEFIELD
+      PARMTYPE AMBER
+      PARM_FILE_NAME gfp-s65t_h148d.prmtop 
+      EI_SCALE14 1.0
+      VDW_SCALE14 1.0
+      &SPLINE
+        EMAX_SPLINE 1.0E14
+        RCUT_NB [angstrom] 12
+      &END SPLINE
+    &END FORCEFIELD
+    &POISSON
+      &EWALD
+        EWALD_TYPE SPME
+        ALPHA .40
+        GMAX 40
+      &END EWALD
+    &END POISSON
+  &END MM
+
+
+  &SUBSYS
+    &CELL
+      ABC 77.714 77.714 77.714
+      PERIODIC XYZ
+      ALPHA_BETA_GAMMA 90 90 90
+    &END CELL
+    &TOPOLOGY                    ! Section used to center the atomic coordinates in the given box. Useful for big molecules
+      CONN_FILE_FORMAT AMBER
+      CONN_FILE_NAME gfp-s65t_h148d.prmtop 
+      COORD_FILE_FORMAT PDB 
+      COORD_FILE_NAME gfp-s65t_h148d-init.pdb 
+    &END TOPOLOGY
+    &KIND H
+      ELEMENT H
+      BASIS_SET DZVP-MOLOPT-GTH
+      POTENTIAL GTH-PBE-q1
+    &END KIND
+    &KIND C
+      ELEMENT C
+      BASIS_SET DZVP-MOLOPT-GTH
+      POTENTIAL GTH-PBE-q4
+    &END KIND
+    &KIND N
+      ELEMENT N
+      BASIS_SET DZVP-MOLOPT-GTH
+      POTENTIAL GTH-PBE-q5
+    &END KIND
+    &KIND O
+      
+      BASIS_SET DZVP-MOLOPT-GTH
+      POTENTIAL GTH-PBE-q6
+    &END KIND
+    &KIND NA+
+     ELEMENT Na
+    &END KIND
+    &KIND Cl-
+     ELEMENT Cl
+    &END KIND
+  &END SUBSYS
+
+&END FORCE_EVAL
+
+&MOTION
+  &MD
+  ENSEMBLE NVT
+  TIMESTEP [fs] 1
+  STEPS    1000  
+  TEMPERATURE 298
+  &THERMOSTAT
+    TYPE NOSE
+    REGION GLOBAL
+    &NOSE
+      TIMECON [fs] 100.
+    &END NOSE
+  &END THERMOSTAT
+  &END MD
+  &PRINT
+    &TRAJECTORY                                 ! Controls the output of the trajectory
+      FORMAT PDB
+      &EACH
+        MD 10
+      &END EACH
+    &END TRAJECTORY
+    &RESTART_HISTORY				! Controls the output of the structure files for restarting a calculation 
+      &EACH         
+        MD 100
+      &END EACH
+    &END RESTART_HISTORY
+  &END PRINT
+&END MOTION
+
